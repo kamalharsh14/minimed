@@ -1,0 +1,561 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MINIMED</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(45deg, #1e3c72, #2a5298, #4a90e2, #74b9ff);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease infinite;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 25px;
+            box-shadow: 0 4px 20px rgba(39, 174, 96, 0.3);
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(10px);
+        }
+
+        .app-container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .dashboard {
+            padding: 20px;
+        }
+
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #2a5298;
+        }
+
+        .status-card.urgent {
+            border-left-color: #4a90e2;
+            background: #f0f8ff;
+        }
+
+        .status-card h3 {
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #666;
+        }
+
+        .status-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .pill-schedule {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .pill-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .pill-item:last-child {
+            border-bottom: none;
+        }
+
+        .pill-info h4 {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .pill-time {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #2a5298, #4a90e2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            transform: translateY(-1px);
+        }
+
+        .btn.taken {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+        }
+
+        .header h1 {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .control-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .control-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .control-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .medicine-lookup {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #2a5298;
+        }
+
+        .medicine-result {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .medicine-result.show {
+            display: block;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-item {
+            text-align: center;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background: #f0f0f0;
+        }
+
+        .nav-item.active {
+            color: #2a5298;
+        }
+
+        .tab-content {
+            display: none;
+            padding-bottom: 80px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .notification {
+            background: linear-gradient(135deg, #4a90e2, #74b9ff);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #2a5298, #4a90e2);
+            transition: width 0.3s ease;
+        }
+
+        @media (max-width: 480px) {
+            .app-container {
+                max-width: 100%;
+            }
+
+            .controls {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="toast" id="toast">💊 Medicine taken successfully!</div>
+    <div class="header">
+        <h1>🏥 MINIMED</h1>
+        <p> a smart medicine box</p>
+        <p id="current-time"></p>
+    </div>
+
+    <!-- Dashboard Tab -->
+    <div id="dashboard-tab" class="tab-content active">
+        <div class="dashboard">
+            <div class="notification" id="pill-notification" style="display: none;">
+                💊 Time to take your medication!
+            </div>
+
+            <div class="status-card">
+                <h3>❤️ Heart Rate</h3>
+                <div class="status-value" id="heart-rate">72 BPM</div>
+            </div>
+
+            <div class="status-card">
+                <h3>💧 Hydration</h3>
+                <div class="status-value" id="hydration">65%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 65%"></div>
+                </div>
+            </div>
+
+            <div class="pill-schedule">
+                <h3>📋 Today's Schedule</h3>
+                <div class="pill-item">
+                    <div class="pill-info">
+                        <h4>Vitamin D</h4>
+                        <div class="pill-time">8:00 AM</div>
+                    </div>
+                    <button class="btn taken">✓ Taken</button>
+                </div>
+                <div class="pill-item">
+                    <div class="pill-info">
+                        <h4>Blood Pressure Med</h4>
+                        <div class="pill-time">2:00 PM</div>
+                    </div>
+                    <button class="btn" onclick="takePill(this)">Take Now</button>
+                </div>
+                <div class="pill-item">
+                    <div class="pill-info">
+                        <h4>Omega-3</h4>
+                        <div class="pill-time">8:00 PM</div>
+                    </div>
+                    <button class="btn" onclick="takePill(this)">Take Now</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls Tab -->
+    <div id="controls-tab" class="tab-content">
+        <div class="dashboard">
+            <div class="controls">
+                <div class="control-card" onclick="toggleKettle()">
+                    <div class="control-icon">🫖</div>
+                    <h4>Kettle</h4>
+                    <p id="kettle-status">Off</p>
+                </div>
+                <div class="control-card" onclick="toggleDiffuser()">
+                    <div class="control-icon">🌸</div>
+                    <h4>Diffuser</h4>
+                    <p id="diffuser-status">Off</p>
+                </div>
+                <div class="control-card" onclick="dispensePill()">
+                    <div class="control-icon">💊</div>
+                    <h4>Dispense Pill</h4>
+                    <p>Manual</p>
+                </div>
+                <div class="control-card" onclick="measureHeartRate()">
+                    <div class="control-icon">❤️</div>
+                    <h4>Heart Rate</h4>
+                    <p>Measure</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Medicine Lookup Tab -->
+    <div id="lookup-tab" class="tab-content">
+        <div class="dashboard">
+            <div class="medicine-lookup">
+                <h3>🔍 Medicine Lookup</h3>
+                <input type="text" class="search-input" id="medicine-search" placeholder="Enter medicine name..." onkeyup="searchMedicine(event)">
+                <button class="btn" onclick="lookupMedicine()">Search</button>
+
+                <div class="medicine-result" id="medicine-result">
+                    <h4 id="med-name"></h4>
+                    <p><strong>Used for:</strong> <span id="med-condition"></span></p>
+                    <p><strong>Dosage:</strong> <span id="med-dosage"></span></p>
+                    <p><strong>Instructions:</strong> <span id="med-instructions"></span></p>
+                    <p><strong>Side Effects:</strong> <span id="med-side-effects"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('dashboard')">
+            <div>🏠</div>
+            <div style="font-size: 12px;">Dashboard</div>
+        </div>
+        <div class="nav-item" onclick="switchTab('controls')">
+            <div>🎛️</div>
+            <div style="font-size: 12px;">Controls</div>
+        </div>
+        <div class="nav-item" onclick="switchTab('lookup')">
+            <div>🔍</div>
+            <div style="font-size: 12px;">Lookup</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Medicine database simulation
+    const medicineDB = {
+        'aspirin': {
+            name: 'Aspirin',
+            condition: 'Pain relief, fever reduction, heart attack prevention',
+            dosage: '325-650mg every 4-6 hours',
+            instructions: 'Take with food to reduce stomach irritation',
+            sideEffects: 'Stomach upset, bleeding, allergic reactions'
+        },
+        'ibuprofen': {
+            name: 'Ibuprofen',
+            condition: 'Pain, inflammation, fever',
+            dosage: '200-400mg every 4-6 hours',
+            instructions: 'Take with food or milk',
+            sideEffects: 'Stomach upset, dizziness, headache'
+        },
+        'vitamin d': {
+            name: 'Vitamin D',
+            condition: 'Bone health, immune system support',
+            dosage: '1000-2000 IU daily',
+            instructions: 'Take with fat-containing meal for better absorption',
+            sideEffects: 'Rare: nausea, vomiting, weakness'
+        }
+    };
+
+    // Update time
+    function updateTime() {
+        const now = new Date();
+        const dateOptions = { weekday: 'short', month: 'short', day: 'numeric' };
+        const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+        const dateStr = now.toLocaleDateString('en-US', dateOptions);
+        const timeStr = now.toLocaleTimeString('en-US', timeOptions);
+        document.getElementById('current-time').textContent = `${dateStr}, ${timeStr}`;
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    // Tab switching
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+
+        document.getElementById(tabName + '-tab').classList.add('active');
+        event.target.closest('.nav-item').classList.add('active');
+    }
+
+    // Pill management
+    function takePill(button) {
+        button.textContent = '✓ Taken';
+        button.classList.add('taken');
+        button.onclick = null;
+
+        // Show toast notification
+        showToast();
+    }
+
+    function showToast() {
+        const toast = document.getElementById('toast');
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+
+    // Device controls
+    function toggleKettle() {
+        const status = document.getElementById('kettle-status');
+        if (status.textContent === 'Off') {
+            status.textContent = 'Heating to 80°C';
+            setTimeout(() => {
+                status.textContent = 'Ready ✓';
+            }, 3000);
+        } else {
+            status.textContent = 'Off';
+        }
+    }
+
+    function toggleDiffuser() {
+        const status = document.getElementById('diffuser-status');
+        status.textContent = status.textContent === 'Off' ? 'Running 🌸' : 'Off';
+    }
+
+    function dispensePill() {
+        alert('💊 Manual pill dispensing activated!');
+    }
+
+    function measureHeartRate() {
+        const heartRateEl = document.getElementById('heart-rate');
+        heartRateEl.textContent = 'Measuring...';
+
+        setTimeout(() => {
+            const rate = Math.floor(Math.random() * 30) + 60;
+            heartRateEl.textContent = rate + ' BPM';
+        }, 2000);
+    }
+
+    // Medicine lookup
+    function searchMedicine(event) {
+        if (event.key === 'Enter') {
+            lookupMedicine();
+        }
+    }
+
+    function lookupMedicine() {
+        const searchTerm = document.getElementById('medicine-search').value.toLowerCase().trim();
+        const resultDiv = document.getElementById('medicine-result');
+
+        if (medicineDB[searchTerm]) {
+            const med = medicineDB[searchTerm];
+            document.getElementById('med-name').textContent = med.name;
+            document.getElementById('med-condition').textContent = med.condition;
+            document.getElementById('med-dosage').textContent = med.dosage;
+            document.getElementById('med-instructions').textContent = med.instructions;
+            document.getElementById('med-side-effects').textContent = med.sideEffects;
+            resultDiv.classList.add('show');
+        } else {
+            alert('Medicine not found in database. Please check spelling or try another name.');
+            resultDiv.classList.remove('show');
+        }
+    }
+
+    // Simulate notifications
+    function showPillNotification() {
+        const notification = document.getElementById('pill-notification');
+        notification.style.display = 'block';
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 5000);
+    }
+
+    // Simulate hydration updates
+    function updateHydration() {
+        const hydrationEl = document.getElementById('hydration');
+        const progressBar = document.querySelector('.progress-fill');
+        let current = parseInt(hydrationEl.textContent);
+
+        if (current < 100) {
+            current += Math.floor(Math.random() * 5) + 1;
+            hydrationEl.textContent = current + '%';
+            progressBar.style.width = current + '%';
+        }
+    }
+
+    // Initialize app
+    setTimeout(showPillNotification, 3000);
+    setInterval(updateHydration, 10000);
+</script>
+</body>
+</html>
